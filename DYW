@@ -1,0 +1,16 @@
+//Go to the laserpack or whatever--avoid debris
+
+float laserpackLocation[3] = {1, 1, 1};
+//Get the SPHERE's location
+//Check that the SPHERE is within a certain distance of the lasterpack
+//If so, setAttitudes or whatever to spin
+//Check to see that the number of shots remaining is greater than 1
+//If not, go back to the beginning and go to the laserpack, spin, etc
+
+//PHYSICS?? Something about setting it to spin at the desired rate
+//Okay cool so now it's spinning on the x-axis hopefully at 80deg/sec
+
+float spin[3] = {80*PI/180,0,0};
+
+float stop[3] = {0,0,0};
+api.setAttRateTarget(stop)
