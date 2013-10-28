@@ -1,0 +1,114 @@
+float k[3];
+float redorblue;
+bool beginlaserpackcollection;
+bool endlaserpackcollection;
+float waka[12];
+float m;
+void init(){
+        beginlaserpackcollection=false;
+        endlaserpackcollection=true;
+        //This function is called once when your code is first loaded.
+
+        //IMPORTANT: make sure to set any variables that need an initial value.
+        //Do not assume variables will be set to 0 automatically!
+        k[0]=0;
+        k[1]=0;
+        k[2]=0;
+}
+float distance(float uh1[3], float uh2[3]){
+                        float x = (uh1[0]-uh2[0])*(uh1[0]-uh2[0])+(uh1[1]-uh2[1])*(uh1[1]-uh2[1])+(uh1[2]-uh2[2])*(uh1[2]-uh2[2]);
+                        float y =sqrt(x);
+                        return y;
+        
+                }
+void collectlaser(){
+        float s[12];
+        api.getMyZRState(s);
+        float a[3] = {s[0],s[1],s[2]};
+        float b[3] = {s[3],s[4],s[5]};
+        float d[3] = {s[9],s[10],s[11]};
+        float laserpack[3] = {-0.50*m,0.65,0};
+        float wut[3] = {0,0,70*m};
+        if(game.haveItem(0,1)){
+                endlaserpackcollection = false;
+        }
+        if(d[2]>40){
+                endlaserpackcollection = false;
+        }
+                if(distance(a,laserpack)<=0.04 && distance(b,k)<=0.005 && distance(d,k)<= 2.0 ){
+                        beginlaserpackcollection = true;
+                }
+        if(beginlaserpackcollection){
+                if(endlaserpackcollection){
+                        api.setTorques(wut);
+                }
+                else{
+                        api.setAttRateTarget(k);
+                }
+        }
+        else{
+                if(distance(a,laserpack)<0.04){
+                        api.setVelocityTarget(k);
+                }
+                else{
+                        api.setPositionTarget(laserpack);
+                }
+                api.setAttRateTarget(k);
+        }
+}
+void loop(){
+        api.getMyZRState(waka);
+        if(api.getTime()<2){
+                if(waka[0]<0){
+                        m=1;
+                }
+                else{
+                        m=-1;
+                }
+        }
+        float sa[3] = {m*0.5,0.05,0};
+        if(api.getTime()<75){
+                if(game.laserShotsRemaining()==0){
+                        collectlaser();
+                }
+        }
+        else{
+                if(api.getTime()<90){
+                        api.setAttitudeTarget(sa);
+                        float bam[3] = {-0.6*m,0.7,0};
+                        api.setPositionTarget(bam);
+                }
+                else{
+                        applylaser3();
+                }
+        }
+}
+void applylaser3(){
+        api.setVelocityTarget(k);
+                float comet[6];
+        game.getCometState(0, comet);
+        float cometvelocity[3] = {comet[3],comet[4],comet[5]};
+        float s[12];
+        api.getMyZRState(s);
+        float flat[3] = {0,0,0};
+        float a[3] = {s[0],s[1],s[2]};
+        float c[3] = {s[6],s[7],s[8]};
+        float displacementtocomet[3] = {comet[0]-a[0],comet[1]-a[1],comet[2]-a[2]};
+        float normalizer = distance(displacementtocomet,flat);
+        displacementtocomet[0]=displacementtocomet[0]/normalizer;
+        displacementtocomet[1]=displacementtocomet[1]/normalizer;
+        displacementtocomet[2]=displacementtocomet[2]/normalizer;
+        api.setAttitudeTarget(displacementtocomet);
+        api.setVelocityTarget(cometvelocity);
+        if(game.laserShotsRemaining()>0){
+                float p = mathVecInner(displacementtocomet, c,3);
+                float q = sqrt(1-p*p)/p;
+                if(q<0.05/normalizer&& p>0){
+                        game.shootLaser();
+                        }
+        }
+        else{
+                float force[3] = {-1*m,1,0};
+                api.setForces(force);//we don't care if it goes out of bounds because fuel is irrelevant at this point so yolo
+        }
+}
